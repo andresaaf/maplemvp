@@ -4,6 +4,7 @@ import win32gui
 import re
 import socket
 from time import sleep
+from ctypes import windll
 
 def screenshot(x, y, w, h):
     return ImageGrab.grab(bbox=(x, y, w, h), all_screens=False)
@@ -77,6 +78,10 @@ def announce(mvps):
             pass
 
 if __name__ == '__main__':
+    # Fix for DPI scaling
+    user32 = windll.user32
+    user32.SetProcessDPIAware()
+    
     db = []
     while True:
         rect = get_maplestory_window()
