@@ -107,16 +107,20 @@ if __name__ == '__main__':
     
     db = []
     while True:
-        rect = get_maplestory_window()
-        img = screenshot(rect[0], rect[1], rect[2], rect[3])
-        #img = Image.open('Untitled.png')
-        text = parse_image(img)
-        mega = parse_mega(text)
-        mvps = parse_mvp(mega)
-        if len(mvps) > 0:
-            new_mvps = filter_mvps(mvps, db)
-            if len(new_mvps) > 0:
-                announce(new_mvps)
-        else:
-            db = []
-        sleep(1)
+        try:
+            rect = get_maplestory_window()
+            img = screenshot(rect[0], rect[1], rect[2], rect[3])
+            #img = Image.open('Untitled.png')
+            text = parse_image(img)
+            mega = parse_mega(text)
+            mvps = parse_mvp(mega)
+            if len(mvps) > 0:
+                new_mvps = filter_mvps(mvps, db)
+                if len(new_mvps) > 0:
+                    announce(new_mvps)
+            else:
+                db = []
+        except Exception as ex:
+            print(ex)
+            continue
+        sleep(2)
