@@ -39,7 +39,7 @@ def parse_image(img):
     cvimg = cv2.resize(cvimg, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     cvimg = double_space(cvimg)
     #cvimg = cv2.threshold(cvimg, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    cv2.imwrite("correct.png", cvimg)
+    cv2.imwrite("mvp.png", cvimg)
     return pytesseract.image_to_string(cvimg)
 
 def parse_mega(text):
@@ -60,7 +60,7 @@ def parse_mega(text):
                     continue
             # If multi-line, merge with previous
             if not first_of_msg and len(mega) > 0:
-                mega[-1] += f' {line}'
+                mega[-1] += line
             else:
                 mega.append(line)
     return mega
@@ -72,7 +72,7 @@ def parse_mvp(lines):
         time_line = l
         if re.match(r'^\[(\d{2}):(\d{2})\]', l):
             time_line = l[8:]
-        time = re.search(r'XX[: ](\d{2})', time_line)
+        time = re.search(r'X?X[: ]?(\d{2})', time_line)
         mvp = re.search(r'MVP', l)
         channel = re.search(r'C[CH]? *(\d{1,2})', l)
         if time and mvp and channel:
@@ -90,14 +90,18 @@ def filter_mvps(mvps, db):
 
 def announce(mvps):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    file = open('mvp_raw.png', 'rb')
+    bytes = file.read()
     for mvp in mvps:
         try:
             sock.connect(('192.168.1.2', 8089))
-            sock.send(f"{mvp['message_time']}|{mvp['time']}|{mvp['channel']}|{mvp['message']}".encode())
-            sock.recv(1)
+            sock.send(f"{mvp['message_time']}|{mvp['time']}|{mvp['channel']}".encode())
+            sleep(0.5)
+            sock.sendall(bytes)
             sock.close()
-        except:
-            pass
+        except Exception as ex:
+            print(ex)
 
 if __name__ == '__main__':
     # Fix for DPI scaling
@@ -111,6 +115,7 @@ if __name__ == '__main__':
             height = rect[3] - rect[1]
             img = screenshot(rect[0], rect[1] + height / 4 + 20, rect[2], rect[3] - height/2 - 30)
             #img = Image.open('Untitled.png')
+            img.save('mvp_raw.png')
             text = parse_image(img)
             mega = parse_mega(text)
             mvps = parse_mvp(mega)
