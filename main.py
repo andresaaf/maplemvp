@@ -43,18 +43,14 @@ def parse_image(img):
     return pytesseract.image_to_string(cvimg)
 
 def parse_mega(text):
-    mega_started = False
     first = True
     mega = []
     for line in text.splitlines():
         if line == '':
             continue
-        if line == 'Mega' or line == 'Meua':
-            mega_started = True
-            continue
-        if mega_started:
+        if True:
             # Next part of chat?
-            if line.startswith('Al') and 'Friend' in line and 'Guild' in line:
+            if line.startswith('Al') and 'Pa' in line and 'Gu' in line:
                 break
             first_of_msg = re.match(r'\[(\d{2}):(\d{2})\]', line)
             if first:
@@ -73,7 +69,10 @@ def parse_mvp(lines):
     mvps = []
     for line in lines:
         l = line.upper()
-        time = re.search(r'XX[: ]*(\d{2})', l)
+        time_line = l
+        if re.match(r'^\[(\d{2}):(\d{2})\]', l):
+            time_line = l[8:]
+        time = re.search(r'X?X?[: ].?.?(\d{2})', time_line)
         mvp = re.search(r'MVP', l)
         channel = re.search(r'C[CH] *(\d{1,2})', l)
         if time and mvp and channel:
@@ -109,7 +108,8 @@ if __name__ == '__main__':
     while True:
         try:
             rect = get_maplestory_window()
-            img = screenshot(rect[0], rect[1], rect[2], rect[3])
+            height = rect[3] - rect[1]
+            img = screenshot(rect[0], rect[1] + height / 4 + 20, rect[2], rect[3] - height/2 - 30)
             #img = Image.open('Untitled.png')
             text = parse_image(img)
             mega = parse_mega(text)
