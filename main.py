@@ -1,13 +1,15 @@
-from PIL import Image, ImageGrab
+from PIL import ImageGrab
 import pytesseract
 import win32gui
 import re
 import socket
 from time import sleep
 from ctypes import windll
+import cv2
+import numpy as np
 
 def screenshot(x, y, w, h):
-    return ImageGrab.grab(bbox=(x, y, w, h), all_screens=False)
+    return ImageGrab.grab(bbox=(x, y, w, h))
 
 def get_maplestory_window():
     hwnd = win32gui.FindWindowEx(None, None, None, "MapleStory")
@@ -16,8 +18,29 @@ def get_maplestory_window():
         return None
     return win32gui.GetWindowRect(hwnd)
 
+def double_space(img):
+    h,w = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+
+    pixels = np.sum(thresh, axis=1).tolist()
+    space = np.ones((2, w), dtype=np.uint8) * 255
+    result = np.zeros((1, w), dtype=np.uint8)
+
+    for i, value in enumerate(pixels):
+        if value == 0:
+            result = np.concatenate((result, space), axis=0)
+        row = gray[i:i+1, 0:w]
+        result = np.concatenate((result, row), axis=0)
+    return result
+
 def parse_image(img):
-    return pytesseract.image_to_string(img)
+    cvimg = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    cvimg = cv2.resize(cvimg, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    cvimg = double_space(cvimg)
+    cvimg = cv2.threshold(cvimg, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    cv2.imwrite("correct.png", cvimg)
+    return pytesseract.image_to_string(cvimg)
 
 def parse_mega(text):
     mega_started = False
@@ -40,7 +63,7 @@ def parse_mega(text):
                 if not first_of_msg:
                     continue
             # If multi-line, merge with previous
-            if not first_of_msg:
+            if not first_of_msg and len(mega) > 0:
                 mega[-1] += f' {line}'
             else:
                 mega.append(line)
@@ -50,7 +73,7 @@ def parse_mvp(lines):
     mvps = []
     for line in lines:
         l = line.upper()
-        time = re.search(r'XX[:\- ]*(\d{2})', l)
+        time = re.search(r'XX[: ]*(\d{2})', l)
         mvp = re.search(r'MVP', l)
         channel = re.search(r'C[CH] *(\d{1,2})', l)
         if time and mvp and channel:
@@ -93,7 +116,6 @@ if __name__ == '__main__':
         if len(mvps) > 0:
             new_mvps = filter_mvps(mvps, db)
             if len(new_mvps) > 0:
-                print(new_mvps)
                 announce(new_mvps)
         else:
             db = []
