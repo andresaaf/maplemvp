@@ -38,7 +38,7 @@ def parse_image(img):
     cvimg = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     cvimg = cv2.resize(cvimg, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     cvimg = double_space(cvimg)
-    cvimg = cv2.threshold(cvimg, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    #cvimg = cv2.threshold(cvimg, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
     cv2.imwrite("correct.png", cvimg)
     return pytesseract.image_to_string(cvimg)
 
@@ -72,9 +72,9 @@ def parse_mvp(lines):
         time_line = l
         if re.match(r'^\[(\d{2}):(\d{2})\]', l):
             time_line = l[8:]
-        time = re.search(r'X?X?[: ].?.?(\d{2})', time_line)
+        time = re.search(r'XX[: ](\d{2})', time_line)
         mvp = re.search(r'MVP', l)
-        channel = re.search(r'C[CH] *(\d{1,2})', l)
+        channel = re.search(r'C[CH]? *(\d{1,2})', l)
         if time and mvp and channel:
             mvps.append({'message_time': line[1:].split(']')[0], 'time': time.group(1), 'channel': channel.group(1), 'message': line})
     return mvps
