@@ -1,4 +1,4 @@
-from PIL import ImageGrab
+from PIL import Image, ImageGrab
 import pytesseract
 import win32gui
 import re
@@ -77,7 +77,7 @@ def parse_mvp(lines):
         mvp = re.search(r'MVP', l)
         channel = re.search(r'C[CH] *(\d{1,2})', l)
         if time and mvp and channel:
-            mvps.append({'message_time': line[1:].split(']')[0], 'time': time.group(1), 'channel': channel.group(1)})
+            mvps.append({'message_time': line[1:].split(']')[0], 'time': time.group(1), 'channel': channel.group(1), 'message': line})
     return mvps
 
 def filter_mvps(mvps, db):
@@ -94,7 +94,7 @@ def announce(mvps):
     for mvp in mvps:
         try:
             sock.connect(('192.168.1.2', 8089))
-            sock.send(f"{mvp['message_time']}|{mvp['time']}|{mvp['channel']}".encode())
+            sock.send(f"{mvp['message_time']}|{mvp['time']}|{mvp['channel']}|{mvp['message']}".encode())
             sock.recv(1)
             sock.close()
         except:
